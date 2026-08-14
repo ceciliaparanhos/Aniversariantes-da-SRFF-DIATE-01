@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aniversários da Equipe - Receita Federal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Chart.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy: #003772;
+  --navy-deep: #02101f;
+  --navy-mid: #0a4a8f;
+  --gold: #c49b4a;
+  --gold-light: #e4c585;
+  --teal: #228a80;
+  --teal-light: #62bab0;
+  --card-bg: #fafafc;
+  --text-dark: #0e1e36;
+  --text-muted: #7d8a9a;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(2, 16, 31, 0.35);
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+  color: var(--text-dark);
+  font-family: 'Poppins', sans-serif;
+}
+
+body { position: relative; overflow-x: hidden; padding-bottom: 40px; }
+
+h1, h2, .hero-name, .kpi-value { font-family: 'Lora', serif; }
+
+/* ---------- Ambient background texture ---------- */
+.bg-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(70, 130, 200, 0.35), transparent 55%),
+    repeating-linear-gradient(115deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 46px);
+}
+
+/* ---------- Header ---------- */
+.topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 40px 14px;
+  color: #fff;
+}
+
+.brand { display: flex; align-items: center; gap: 18px; }
+
+.logo-badge {
+  width: auto; height: 60px;
+  background: transparent;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.logo-badge img { height: 100%; width: auto; object-fit: contain; }
+
+.brand-text h1 { margin: 0; font-size: 1.9rem; font-weight: 700; letter-spacing: 0.3px; }
+.brand-text p { margin: 2px 0 0; font-size: 0.8rem; color: #c3d2e6; letter-spacing: 1px; text-transform: uppercase; }
+
+.today-pill {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 8px 20px;
+  text-align: right;
+  backdrop-filter: blur(6px);
+}
+.today-pill .eyebrow { display: block; font-size: 0.65rem; letter-spacing: 1.5px; color: #b9c8de; text-transform: uppercase; }
+.today-pill strong { font-size: 1rem; color: #fff; }
+
+/* ---------- Bunting ribbon ---------- */
+.ribbon {
+  position: relative; z-index: 2;
+  height: 14px;
+  margin: 4px 40px 20px;
+  background-image: repeating-linear-gradient(
+    100deg,
+    var(--gold) 0 14px,
+    transparent 14px 18px,
+    var(--teal-light) 18px 32px,
+    transparent 32px 36px
+  );
+  clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+  opacity: 0.85;
+}
+
+/* ---------- Grid layout ---------- */
+.grid {
+  position: relative; z-index: 2;
+  display: grid;
+  grid-template-columns: 1.5fr 0.9fr 1.3fr 1fr;
+  grid-template-rows: auto auto auto;
+  align-items: stretch; /* Garante alinhamento exato das alturas */
+  gap: 20px;
+  padding: 0 40px;
+  grid-template-areas:
+    "hero kpi1 lista filtros"
+    "hero kpi2 lista filtros"
+    "cal cal tabela tabela";
+}
+
+.hero { grid-area: hero; }
+.kpi:nth-of-type(2) { grid-area: kpi1; }
+.kpi:nth-of-type(3) { grid-area: kpi2; }
+.lista { grid-area: lista; }
+.filtros { grid-area: filtros; }
+.calendario { grid-area: cal; }
+.tabela-completa { grid-area: tabela; }
+
+/* ---------- Card base ---------- */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px 22px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  background: var(--bar, var(--navy));
+}
+
+.card-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.card-label.small { margin-bottom: 6px; }
+.card-label .contador { text-transform: none; letter-spacing: 0; font-weight: 500; margin-left: 6px; }
+
+/* icons */
+.ico { width: 14px; height: 14px; display: inline-block; position: relative; flex-shrink: 0; }
+.ico.star::before { content: "★"; position: absolute; inset: -5px auto auto -2px; color: var(--gold); font-size: 15px; }
+.ico.star.big::before { font-size: 34px; inset: -18px auto auto -10px; }
+.ico.list::before { content: "☰"; color: var(--teal); font-size: 14px; }
+.ico.filter::before { content: "▽"; color: var(--navy); font-size: 14px; }
+.ico.calendar::before { content: "▦"; color: var(--gold); font-size: 14px; }
+
+/* ---------- Hero ---------- */
+.hero-body { display: flex; align-items: center; gap: 20px; min-height: 130px; }
+.medal {
+  width: 92px; height: 92px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #f2e9d3 70%);
+  border: 3px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative;
+}
+.hero-info { border-left: 1px solid #e7e9ee; padding-left: 20px; }
+.hero-name { font-size: 1.55rem; font-weight: 700; margin: 0 0 6px; color: var(--text-dark); line-height: 1.15; }
+.hero-sub { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+.hero.tem-aniversario .medal { animation: pulse 2.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(196,155,74,0.35);} 50% { box-shadow: 0 0 0 10px rgba(196,155,74,0);} }
+
+/* ---------- KPI ---------- */
+.kpi-value { font-size: 1.9rem; font-weight: 700; margin: 2px 0 0; color: var(--text-dark); }
+.kpi-sub { margin: 4px 0 0; color: var(--text-muted); font-size: 0.82rem; }
+
+/* ---------- Lista próximos ---------- */
+.proximos-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto; }
+.proximos-list li { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; }
+.proximos-list .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+.proximos-list .nome { font-weight: 500; color: var(--text-dark); }
+.proximos-list .quando { margin-left: auto; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap; }
+.skeleton { height: 16px; background: #eef0f3; border-radius: 6px; list-style: none; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* ---------- Filtros ---------- */
+.filtros label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.filtros input, .filtros select {
+  display: block; width: 100%; margin-top: 6px; padding: 9px 10px;
+  border: 1px solid #dde1e7; border-radius: 8px; font-family: inherit; font-size: 0.85rem;
+  background: #fff; color: var(--text-dark);
+}
+.filtros input:focus, .filtros select:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.btn-clear {
+  width: 100%; padding: 9px; margin-top: 4px;
+  background: var(--navy); color: #fff; border: none; border-radius: 8px;
+  font-family: inherit; font-weight: 600; font-size: 0.8rem; cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-clear:hover { background: var(--navy-mid); }
+
+/* ---------- Calendário ---------- */
+.calendario {
+  height: 100%;
+}
+.calendario .card-label { justify-content: space-between; }
+.mes-nav { display: flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text-dark); }
+.mes-nav button {
+  border: none; background: #eef1f5; width: 26px; height: 26px; border-radius: 50%;
+  cursor: pointer; font-size: 1rem; color: var(--navy); line-height: 1;
+}
+.mes-nav button:hover { background: #e2e7ee; }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); text-align: center; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; flex: 1; }
+.cal-day {
+  aspect-ratio: 1; border-radius: 10px; background: #f2f3f6; position: relative;
+  display: flex; flex-direction: column; align-items: flex-start; padding: 6px;
+  font-size: 0.75rem; color: var(--text-muted); cursor: default;
+}
+.cal-day.empty { background: transparent; }
+.cal-day.has-birthday { background: linear-gradient(160deg, var(--gold-light), var(--gold)); color: #4a3a10; font-weight: 600; }
+.cal-day.today { outline: 2px solid var(--navy); outline-offset: -2px; }
+.cal-day .count {
+  position: absolute; bottom: 5px; right: 6px; font-size: 0.65rem; font-weight: 700;
+}
+.cal-day .names {
+  position: absolute; top: 100%; left: 0; z-index: 5; background: #fff; color: var(--text-dark);
+  border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: 0.75rem;
+  white-space: nowrap; display: none; margin-top: 4px;
+}
+.cal-day.has-birthday:hover .names { display: block; }
+
+/* ---------- Tabela Completa (Preenchimento e rolagem perfeitos) ---------- */
+.tabela-completa {
+  height: 100%;
+}
+
+.tabela-wrap {
+  flex: 1 1 0; /* Ocupa todo o espaço vertical disponível do card */
+  width: 100%;
+  overflow-y: auto; /* Adiciona rolagem quando necessário */
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 2px solid #eceef2;
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  z-index: 2;
+}
+
+tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f2f5;
+  color: var(--text-dark);
+}
+
+tbody tr:hover { background: #f7f8fb; }
+.badge-hoje { background: var(--gold); color: #4a3a10; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+
+/* ---------- Footer ---------- */
+footer {
+  position: relative; z-index: 2; text-align: center; color: rgba(255,255,255,0.55);
+  font-size: 0.75rem; margin-top: 30px; padding: 0 40px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "hero hero"
+      "kpi1 kpi2"
+      "lista filtros"
+      "cal cal"
+      "tabela tabela";
+  }
+}
+@media (max-width: 640px) {
+  .topbar { flex-direction: column; align-items: flex-start; gap: 14px; padding: 18px 20px 10px; }
+  .ribbon, .grid, footer { margin-left: 0; margin-right: 0; padding-left: 20px; padding-right: 20px; }
+  .grid { grid-template-columns: 1fr; grid-template-areas: "hero" "kpi1" "kpi2" "lista" "filtros" "cal" "tabela"; }
+  .hero-body { flex-direction: column; align-items: flex-start; }
+  .hero-info { border-left: none; padding-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-fx" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-text">
+      <h1>Aniversariantes da SRFF/DIATE 01</h1>
+      <p>Receita Federal · Painel de consulta</p>
+    </div>
+  </div>
+  <div class="today-pill">
+    <span class="eyebrow">Hoje</span>
+    <strong id="todayLabel">--/--/----</strong>
+  </div>
+</header>
+
+<div class="ribbon" aria-hidden="true"></div>
+
+<main class="grid">
+
+  <!-- Hero: aniversariante do dia -->
+  <section class="card hero" style="--bar: var(--gold)">
+    <div class="card-label"><span class="ico star"></span>Aniversariante do dia</div>
+    <div class="hero-body" id="heroBody">
+      <div class="medal"><span class="ico star big"></span></div>
+      <div class="hero-info">
+        <p class="hero-name" id="heroName">Carregando…</p>
+        <p class="hero-sub" id="heroSub">&nbsp;</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI: próximo em -->
+  <section class="card kpi" style="--bar: var(--teal)">
+    <div class="card-label small">Próximo em</div>
+    <p class="kpi-value" id="kpiProximo">-- dias</p>
+    <p class="kpi-sub" id="kpiProximoNome">&nbsp;</p>
+  </section>
+
+  <!-- KPI: aniversariantes no mês -->
+  <section class="card kpi" style="--bar: var(--gold)">
+    <div class="card-label small">Aniversariantes no mês</div>
+    <p class="kpi-value" id="kpiMes">--</p>
+    <p class="kpi-sub">pessoas</p>
+  </section>
+
+  <!-- Lista: próximos aniversários -->
+  <section class="card lista" style="--bar: var(--teal)">
+    <div class="card-label"><span class="ico list"></span>Próximos aniversários</div>
+    <ul id="listaProximos" class="proximos-list">
+      <li class="skeleton"></li>
+      <li class="skeleton"></li>
+      <li class="skeleton"></li>
+    </ul>
+  </section>
+
+  <!-- Filtros -->
+  <section class="card filtros" style="--bar: var(--navy)">
+    <div class="card-label"><span class="ico filter"></span>Filtros</div>
+    <label>Buscar por nome
+      <input type="text" id="fBusca" placeholder="Digite um nome…" />
+    </label>
+    <label>Equipe
+      <select id="fEquipe"><option value="">Todas</option></select>
+    </label>
+    <label>Unidade
+      <select id="fUnidade"><option value="">Todas</option></select>
+    </label>
+    <button id="fLimpar" class="btn-clear">Limpar filtros</button>
+  </section>
+
+  <!-- Calendário do mês -->
+  <section class="card calendario" style="--bar: var(--gold)">
+    <div class="card-label">
+      <span class="ico calendar"></span>
+      <span>Calendário de aniversários</span>
+      <div class="mes-nav">
+        <button id="mesPrev">‹</button>
+        <strong id="mesLabel">—</strong>
+        <button id="mesNext">›</button>
+      </div>
+    </div>
+    <div class="cal-weekdays">
+      <span>dom</span><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span>
+    </div>
+    <div id="calGrid" class="cal-grid"></div>
+  </section>
+
+  <!-- Tabela completa -->
+  <section class="card tabela-completa">
+    <div class="card-label"><span class="ico list"></span>Todos os aniversariantes <span id="contadorResultados" class="contador"></span></div>
+    <div class="tabela-wrap">
+      <table id="tabelaCompleta">
+        <thead>
+          <tr><th>Nome</th><th>Equipe</th><th>Cargo</th><th>Próximo Aniversário</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Atualizado automaticamente a partir da base de servidores · dados calculados em tempo real
+</footer>
+
+<script>
+const DADOS_ANIVERSARIANTES = [
+      { id: 1, nome: "Ada Fernandes Cordeiro", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1981-04-10" },
+      { id: 2, nome: "Adalberto Candido Macedo", equipe: "EATRE2", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1957-01-07" },
+      { id: 3, nome: "Adaotino Vieira da Silva", equipe: "APA", cargo: "TSS", unidade: "ARF/BGR - ARF - BARRA DO GARCAS", data_nascimento: "1960-10-12" },
+      { id: 4, nome: "Adauto Moreira Mendonça Filho", equipe: "PAV", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1956-03-04" },
+      { id: 5, nome: "Agnaldo Barbosa Mecenero", equipe: "PAV", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1974-02-04" },
+      { id: 6, nome: "Alencar Mendes Júnior", equipe: "CHAT", cargo: "ATA", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1966-12-12" },
+      { id: 7, nome: "Alessandra Barros Chaves", equipe: "EATRE2", cargo: "ATA", unidade: "POSTO/NAV - POSTO - NAVIRAÍ", data_nascimento: "1986-07-18" },
+      { id: 8, nome: "Alessandra Lobato Arruda", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1974-07-05" },
+      { id: 9, nome: "Alex Sandro Rezende de Jesus", equipe: "CHAT", cargo: "ATA", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1987-02-05" },
+      { id: 10, nome: "Alexandre Leao Guedes", equipe: "EATRE1", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1969-06-16" },
+      { id: 11, nome: "Aline Rodrigues da Silva Lira", equipe: "PAV", cargo: "ATA", unidade: "ARF/URU - ARF - URUACU", data_nascimento: "1995-05-31" },
+      { id: 12, nome: "Altamir Oliveira de Souza", equipe: "APA", cargo: "TSS", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1956-02-29" },
+      { id: 13, nome: "Ana Carla Francisca Braga", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1978-06-20" },
+      { id: 14, nome: "Ana Maria Candido Salatin", equipe: "CAIXA", cargo: "TSS", unidade: "POSTO/NAV - POSTO - NAVIRAÍ", data_nascimento: "1967-12-02" },
+      { id: 15, nome: "Ana Paula Barros Sant´Anna", equipe: "CHAT", cargo: "ATA", unidade: "ARF/GUR - ARF - GURUPI", data_nascimento: "1978-07-22" },
+      { id: 16, nome: "Ana Paula da Silva", equipe: "APA", cargo: "Administrativo", unidade: "IRF/CAE - IRF - CACERES", data_nascimento: "1985-07-05" },
+      { id: 17, nome: "Ana Paula Rodrigues Catoira", equipe: "APA", cargo: "ATA", unidade: "ARF/URU - ARF - URUACU", data_nascimento: "1979-01-07" },
+      { id: 18, nome: "Analia Lima e Silva", equipe: "EATRE1", cargo: "PSE/Serpro", unidade: "ARF/CTL - ARF - CATALAO", data_nascimento: "1957-10-27" },
+      { id: 19, nome: "Andrea Regina Duarte de Souza Amante", equipe: "PAV", cargo: "ATRFB", unidade: "ARF/JAT - ARF - JATAI", data_nascimento: "1969-08-16" },
+      { id: 20, nome: "Ângela Maria da Silva Oliveira", equipe: "CAIXA", cargo: "Datilógrafo", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1957-11-25" },
+      { id: 21, nome: "Aparecida de Fátima Dangoni Pires", equipe: "EATRE1", cargo: "Agente Administrativo", unidade: "ARF/GUR - ARF - GURUPI", data_nascimento: "1957-10-28" },
+      { id: 22, nome: "Aurea Regina Sandes Rocha", equipe: "EATRE2", cargo: "TSS", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1965-01-01" },
+      { id: 23, nome: "Aureomar Pereira Borges", equipe: "EATRE2", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1961-03-22" },
+      { id: 24, nome: "Blanca Cristina Esrani da Penha", equipe: "APA", cargo: "Administrativo", unidade: "ALF/PPA - ALF - PONTA PORÃ", data_nascimento: "1980-08-14" },
+      { id: 25, nome: "Camila Tiago Almeida Rodrigues", equipe: "CAIXA", cargo: "ATA", unidade: "ARF/TLS - ARF - TRES LAGOAS", data_nascimento: "1987-11-18" },
+      { id: 26, nome: "Camila Venite de Carvalho", equipe: "CAIXA", cargo: "ATA", unidade: "ARF/TSE - ARF - TANGARÁ DA SERRA", data_nascimento: "1988-01-15" },
+      { id: 27, nome: "Carlos Alberto Gomes de Figueiredo Junior", equipe: "EATRE2", cargo: "ATA", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1985-05-21" },
+      { id: 28, nome: "Carlos Eduardo Silva", equipe: "APA", cargo: "Administrativo", unidade: "IRF/CAE - IRF - CACERES", data_nascimento: "1981-04-06" },
+      { id: 29, nome: "Carolina Manvailer Fialkowski de Andrade", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1984-05-21" },
+      { id: 30, nome: "Cassia Maria Bezerra da Silva", equipe: "EATRE1", cargo: "Agente Administrativo", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1965-06-29" },
+      { id: 31, nome: "Cecilia Santana Evangelista", equipe: "EATRE1", cargo: "ATRFB", unidade: "ARF/CTL - ARF - CATALAO", data_nascimento: "1979-05-15" },
+      { id: 32, nome: "Celia Maria Sanches Lourinho Queiroz", equipe: "EATRE2", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1958-12-24" },
+      { id: 33, nome: "Clarice Lima Calazans", equipe: "EATRE2", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1963-11-19" },
+      { id: 34, nome: "Cláudia Aires do Rego", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1971-11-15" },
+      { id: 35, nome: "Claudio Cesar Cordeiro", equipe: "EATRE2", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1970-10-17" },
+      { id: 36, nome: "Coraci Cardoso de Paula", equipe: "APA", cargo: "Empregado SERPRO", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1959-09-04" },
+      { id: 37, nome: "Cristiane Lacerda Ferreira", equipe: "EATRE2", cargo: "ATRFB", unidade: "DRF/PAL - DRF - PALMAS", data_nascimento: "1978-01-18" },
+      { id: 38, nome: "Daniel Antonio Machado da Silva", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1982-04-02" },
+      { id: 39, nome: "Daniel de Oliveira Lemos", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1972-08-04" },
+      { id: 40, nome: "Daniel Ribeiro da Silva", equipe: "PAV", cargo: "ATA", unidade: "ARF/CER - ARF - CERES", data_nascimento: "1978-04-29" },
+      { id: 41, nome: "Daniel Rufino Rocha", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1970-02-28" },
+      { id: 42, nome: "Débora Martins Lima", equipe: "APA", cargo: "TSS", unidade: "ARF/BGR - ARF - BARRA DO GARCAS", data_nascimento: "1964-05-08" },
+      { id: 43, nome: "Délio Luis Galvão Moreira", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1978-12-13" },
+      { id: 44, nome: "Denilson Alvares", equipe: "CAIXA", cargo: "Agente Administrativo", unidade: "ALF/COR - ALF - CORUMBÁ", data_nascimento: "1970-06-29" },
+      { id: 45, nome: "Dino Sane Constantino Guimarães", equipe: "CAIXA", cargo: "ATRFB", unidade: "ARF/PTO - ARF - PARAISO DO TOCANTINS", data_nascimento: "1971-12-14" },
+      { id: 46, nome: "Dione Regina Carmo dos Anjos", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1964-11-15" },
+      { id: 47, nome: "Edson Taques Saldanha", equipe: "EATRE2", cargo: "TSS", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1963-01-14" },
+      { id: 48, nome: "Eduardo Oliveira de Araujo", equipe: "CAIXA", cargo: "Administrativo", unidade: "ALF/COR - ALF - CORUMBÁ", data_nascimento: "1967-04-23" },
+      { id: 49, nome: "Élcio Okoshi", equipe: "CHAT", cargo: "ATA", unidade: "ARF/ROO - ARF - RONDONOPOLIS", data_nascimento: "1979-07-31" },
+      { id: 50, nome: "Eliane Machado Prado Mendes", equipe: "CAIXA", cargo: "Administrativo", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1976-11-30" },
+      { id: 51, nome: "Elizabeth Mayumi Maehara Kondo", equipe: "EATRE2", cargo: "ATRFB", unidade: "ARF/ITR - ARF - ITUMBIARA", data_nascimento: "1969-10-12" },
+      { id: 52, nome: "Eltevon Dias da Rocha", equipe: "CAIXA", cargo: "ATA", unidade: "ARF/BGR - ARF - BARRA DO GARCAS", data_nascimento: "1988-12-06" },
+      { id: 53, nome: "Elvira de Paula Batista", equipe: "CHAT", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1970-05-12" },
+      { id: 54, nome: "Eduardo da Cruz Silva", equipe: "APA", cargo: "TSS", unidade: "DRF Brasília-DF", data_nascimento: "1975-08-03" },
+      { id: 55, nome: "Elzenete da Costa Cavalcante", equipe: "APA", cargo: "Administrativo", unidade: "POSTO/AQU - POSTO - AQUIDAUANA", data_nascimento: "1963-02-12" },
+      { id: 56, nome: "Emília Costa Metran", equipe: "CAIXA", cargo: "TSS", unidade: "ALF/COR - ALF - CORUMBÁ", data_nascimento: "1958-10-12" },
+      { id: 57, nome: "Enedina Pinheiro Simão Azevedo", equipe: "APA", cargo: "ATRFB", unidade: "ARF/GUR - ARF - GURUPI", data_nascimento: "1969-10-22" },
+      { id: 58, nome: "Fábio Luiz Dias Leal", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1970-04-22" },
+      { id: 59, nome: "Flávio Soares Barreto", equipe: "APA", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1980-09-25" },
+      { id: 60, nome: "Francisco Junio Ferreira", equipe: "PAV", cargo: "ATA", unidade: "ARF/FMS - ARF - FORMOSA", data_nascimento: "1983-07-05" },
+      { id: 61, nome: "Frederico Gustavo de Lima Toledo", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "ARF/FMS - ARF - FORMOSA", data_nascimento: "1981-08-13" },
+      { id: 62, nome: "Geordana Mendonca Curcino", equipe: "CHAT", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1991-11-15" },
+      { id: 63, nome: "Gilmar Portilho Santiago", equipe: "APA", cargo: "TSS", unidade: "DRF/PAL - DRF - PALMAS", data_nascimento: "1975-02-25" },
+      { id: 64, nome: "Giovana Meneghini", equipe: "CAIXA", cargo: "ATRFB", unidade: "ARF/ITR - ARF - ITUMBIARA", data_nascimento: "1962-12-16" },
+      { id: 65, nome: "Gonçalo Vasconcelos Duarte", equipe: "APA", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1962-11-30" },
+      { id: 66, nome: "Hudson Silveira e Silva", equipe: "CAIXA", cargo: "ATRFB", unidade: "ARF/ITR - ARF - ITUMBIARA", data_nascimento: "1978-10-02" },
+      { id: 67, nome: "Iara Campos Navarro", equipe: "CHAT", cargo: "TSS", unidade: "ALF/COR - ALF - CORUMBÁ", data_nascimento: "1962-03-07" },
+      { id: 68, nome: "Jerônimo José Correa", equipe: "FALE CONOSCO", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1966-05-25" },
+      { id: 69, nome: "Jeronimo José Souto Neto", equipe: "CHAT", cargo: "ATA", unidade: "ARF/PTO - ARF - PARAISO DO TOCANTINS", data_nascimento: "1981-08-27" },
+      { id: 70, nome: "João de Deus Pereira Rocha", equipe: "EATRE2", cargo: "Datilógrafo", unidade: "ARF/GUR - ARF - GURUPI", data_nascimento: "1964-05-28" },
+      { id: 71, nome: "João José Von Glehn dos Santos", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1979-01-19" },
+      { id: 72, nome: "João Moreira de Oliveira Junior", equipe: "PAV", cargo: "Administrativo", unidade: "ARF/CER - ARF - CERES", data_nascimento: "1956-09-16" },
+      { id: 73, nome: "Jorge Maciel De Oliveira Bassualdo", equipe: "CAIXA", cargo: "ATRFB", unidade: "DRF/ANA - DRF - ANAPOLIS", data_nascimento: "1973-06-26" },
+      { id: 74, nome: "Josânia Alves Carvalho de Lima", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1974-07-26" },
+      { id: 75, nome: "José Augusto Souza de Campos Junior", equipe: "APA", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1980-09-15" },
+      { id: 76, nome: "José Francisco Filho", equipe: "CAIXA", cargo: "Agente de Serviços Diversos", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1953-11-28" },
+      { id: 77, nome: "José Ivaide Gomes", equipe: "APA", cargo: "ATRFB", unidade: "DRF/PAL - DRF - PALMAS", data_nascimento: "1965-05-18" },
+      { id: 78, nome: "Jose Edson Rocha Lyrio", equipe: "PAV", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1968-12-11" },
+      { id: 79, nome: "Juliana Coelho Siqueira Pires", equipe: "EATRE2", cargo: "ATA", unidade: "DRF/ANA - DRF - ANAPOLIS", data_nascimento: "1979-10-16" },
+      { id: 80, nome: "Juliany Cristine Liberato de Oliveira Bernardo", equipe: "CHAT", cargo: "ATA", unidade: "ARF/CER - ARF - CERES", data_nascimento: "1993-02-12" },
+      { id: 81, nome: "Karla Adriana Vieira Barbosa", equipe: "CHAT", cargo: "ATA", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1983-09-03" },
+      { id: 82, nome: "Karollyny Cerewuta Salles", equipe: "CHAT", cargo: "ATA", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1983-01-21" },
+      { id: 83, nome: "Kelly Taciane Lopes da Silva Barreto", equipe: "CHAT", cargo: "ATA", unidade: "ARF/ROO - ARF - RONDONOPOLIS", data_nascimento: "1984-07-21" },
+      { id: 84, nome: "Larissa Infantino Menezes Leite do Valle", equipe: "EATRE1", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1987-05-28" },
+      { id: 85, nome: "Lidiane Ferreira da Fonseca", equipe: "CAIXA", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1980-10-02" },
+      { id: 86, nome: "Lucas Castro Teixeira Canto", equipe: "COLEGA", cargo: "Administrativo", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1994-08-05" },
+      { id: 87, nome: "Luciana Gonzaga da Costa", equipe: "EATRE2", cargo: "ATA", unidade: "ARF/RVE - ARF - RIO VERDE", data_nascimento: "1979-11-06" },
+      { id: 88, nome: "Luciano Barbosa", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "DRF/ANA - DRF - ANAPOLIS", data_nascimento: "1975-10-07" },
+      { id: 89, nome: "Luciene Gonçalves Cavalcante", equipe: "EATRE1", cargo: "ATRFB", unidade: "ARF/AIN - ARF - ARAGUAINA", data_nascimento: "1978-09-25" },
+      { id: 90, nome: "Lucimar Martins Teixeira Almeida", equipe: "EATRE2", cargo: "Datilógrafo", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1964-05-20" },
+      { id: 91, nome: "Luís Sérgio Massaro", equipe: "CHAT", cargo: "ATA", unidade: "ARF/ROO - ARF - RONDONOPOLIS", data_nascimento: "1982-04-22" },
+      { id: 92, nome: "Luiz Carlos Teixeira", equipe: "EATRE2", cargo: "Técnico de Contabilidade", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1961-11-01" },
+      { id: 93, nome: "Luiz Claudio Goncalves Pina", equipe: "APA", cargo: "TSS", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1965-09-02" },
+      { id: 94, nome: "Luiz Eduardo Cavalheiro Nantes", equipe: "EATRE1", cargo: "ATRFB", unidade: "ARF/DOU - ARF - DOURADOS", data_nascimento: "1964-04-27" },
+      { id: 95, nome: "Luis Roberto da Silva", equipe: "APA", cargo: "Administrativo", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1966-03-22" },
+      { id: 96, nome: "Luiz Vicente Rossi Vilela", equipe: "EATRE2", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1961-05-29" },
+      { id: 97, nome: "Magda Beatriz Oliveira Felix e Carvalho Faria", equipe: "EATRE1", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1968-05-25" },
+      { id: 98, nome: "Marcello José de Almeida", equipe: "PAV", cargo: "ATA", unidade: "POSTO/SLM - POSTO - SÃO LUIS DE MONTES BELOS", data_nascimento: "1989-01-13" },
+      { id: 99, nome: "Marciano Dantas do Vale", equipe: "EATRE1", cargo: "ATRFB", unidade: "ARF/AIN - ARF - ARAGUAINA", data_nascimento: "1983-07-26" },
+      { id: 100, nome: "Marcio Thadeu Sempio Borges", equipe: "CHAT", cargo: "ATA", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1963-09-18" },
+      { id: 101, nome: "Marcio Uhde", equipe: "EATRE2", cargo: "ATA", unidade: "ARF/SIN - ARF - SINOP", data_nascimento: "1978-02-18" },
+      { id: 102, nome: "Marcos Prudente de Oliveira Correa", equipe: "CAIXA", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1982-09-07" },
+      { id: 103, nome: "Maria Barcelos Ferreira", equipe: "APA", cargo: "Administrativo", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1990-11-03" },
+      { id: 104, nome: "Maria da Conceição Cerqueira Barbosa", equipe: "APA", cargo: "Agente Administrativo", unidade: "ARF/GUR - ARF - GURUPI", data_nascimento: "1967-03-28" },
+      { id: 105, nome: "Mariana Alves Pontes da Rocha", equipe: "EATRE1", cargo: "ATA", unidade: "DRF/ANA - DRF - ANAPOLIS", data_nascimento: "1987-12-07" },
+      { id: 106, nome: "Mariana Finimundy", equipe: "CAIXA", cargo: "ATA", unidade: "POSTO/AFA - POSTO - ALTA FLORESTA", data_nascimento: "1980-05-24" },
+      { id: 107, nome: "Mariangela Okama", equipe: "EATRE1", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1972-11-20" },
+      { id: 108, nome: "Marildete Mendonça Netzlaff", equipe: "EATRE2", cargo: "TSS", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1963-05-12" },
+      { id: 109, nome: "Marluce Vieira Chagas Peres", equipe: "COLEGA", cargo: "Agente Administrativo", unidade: "ARF/BGR - ARF - BARRA DO GARCAS", data_nascimento: "1966-02-12" },
+      { id: 110, nome: "Melissa Mano Correa", equipe: "EATRE2", cargo: "ATA", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1979-06-26" },
+      { id: 111, nome: "Michele Naira Salomão", equipe: "EATRE2", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1979-07-20" },
+      { id: 112, nome: "Michelle Rodrigues de Morais Alves Barcelos", equipe: "CHAT", cargo: "ATRFB", unidade: "ARF/JAT - ARF - JATAI", data_nascimento: "1988-07-01" },
+      { id: 113, nome: "Nélio Teixeira Figueiredo", equipe: "CAIXA", cargo: "TSS", unidade: "DRF/PAL - DRF - PALMAS", data_nascimento: "1973-12-06" },
+      { id: 114, nome: "Nilma Elita Menezes", equipe: "EATRE1", cargo: "ATRFB", unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1964-11-20" },
+      { id: 115, nome: "Nilson Leme da Silva", equipe: "EATRE1", cargo: "ATRFB", unidade: "ARF/TLS - ARF - TRES LAGOAS", data_nascimento: "1957-11-25" },
+      { id: 116, nome: "Odirley Dias de Sousa", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/CBA - DRF - CUIABA", data_nascimento: "1978-05-09" },
+      { id: 117, nome: "Paulo Américo Rossi", equipe: "CHAT", cargo: "ATRFB", unidade: "ARF/CNV - ARF - CALDAS NOVAS", data_nascimento: "1965-10-29" },
+      { id: 118, nome: "Paulo Cesar Candido Ribeiro", equipe: "FALE CONOSCO", cargo: "TSS", unidade: "ARF/CNV - ARF - CALDAS NOVAS", data_nascimento: "1968-12-05" },
+      { id: 119, nome: "Paulo Cesar Rodrigues da Costa", equipe: "EATRE2", cargo: "ATA", unidade: "ARF/FMS - ARF - FORMOSA", data_nascimento: "1988-07-15" },
+      { id: 120, nome: "Paulo Roberto Gomes de Jesus", equipe: "CAIXA", cargo: "ATRFB", unidade: "DRF/ANA - DRF - ANAPOLIS", data_nascimento: "1969-05-11" },
+      { id: 121, nome: "Rafael de Moraes Pereira", equipe: "CAIXA", cargo: "ATA", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1983-10-26" },
+      { id: 122, nome: "Rayane Oliveira Marques Ramos", equipe: "PAV", cargo: "ATA", unidade: "POSTO/PRA - POSTO - PARANAIBA", data_nascimento: "1992-02-28" },
+      { id: 123, nome: "Ricardo Agapito Nicoletti", equipe: "EATRE2", cargo: "ATA", unidade: "ARF/CTL - ARF - CATALAO", data_nascimento: "1986-10-14" },
+      { id: 124, nome: "Milton Ferreira de Oliveira", equipe: "APA", cargo: "TSS", unidade: "DRF Brasília-DF", data_nascimento: "1966-09-25" },
+      { id: 125, nome: "Rita Casser da Silva", equipe: "APA", cargo: "Administrativo", unidade: "ARF/DOU - ARF - DOURADOS", data_nascimento: "1968-02-03" },
+      { id: 126, nome: "Roberto Spindola Abrenhosa", equipe: "PAV", cargo: "ATRFB", unidade: "DRF/ANA - DRF - ANAPOLIS", data_nascimento: "1973-06-08" },
+      { id: 127, nome: "Rodney Miranda Magalhães", equipe: "EATRE2", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1964-05-17" },
+      { id: 128, nome: "Rodrigo Dias Pereira", equipe: "CAIXA", cargo: "Administrativo", unidade: "ARF/GUR - ARF - GURUPI", data_nascimento: "1983-05-15" },
+      { id: 129, nome: "Rogerio Rodrigues de Oliveira", equipe: "CAIXA", cargo: "ATA", unidade: "ARF/ITR - ARF - ITUMBIARA", data_nascimento: "1977-02-27" },
+      { id: 130, nome: "Ronaldo Cardoso Mendes", equipe: "EATRE2", cargo: "TSS", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1961-02-09" },
+      { id: 131, nome: "Ronan Mendanha Pereira", equipe: "PAV", cargo: "ATRFB", unidade: "ARF/RVE - ARF - RIO VERDE", data_nascimento: "1994-07-20" },
+      { id: 132, nome: "Samuel e Souza Paraense", equipe: "COLEGA", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1982-07-25" },
+      { id: 133, nome: "Sandra Martins da Silva", equipe: "APA", cargo: "TSS", unidade: "ARF/BGR - ARF - BARRA DO GARCAS", data_nascimento: "1962-12-18" },
+      { id: 134, nome: "Selene Guerra Ferreira", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1954-07-11" },
+      { id: 135, nome: "Silvana Noll Frantz", equipe: "EATRE2", cargo: "ATRFB", unidade: "ARF/ROO - ARF - RONDONOPOLIS", data_nascimento: "1977-10-01" },
+      { id: 136, nome: "Simone Schwambach", equipe: "EATRE1", cargo: "ATRFB", unidade: "ARF/DOU - ARF - DOURADOS", data_nascimento: "1975-08-06" },
+      { id: 137, nome: "Solange Aparecida do Nascimento Soares", equipe: "APA", cargo: "TSS", unidade: "ARF/AIN - ARF - ARAGUAINA", data_nascimento: "1972-07-10" },
+      { id: 138, nome: "Solano Miguel de Ibanhes", equipe: "CAIXA", cargo: "ATA", unidade: "ARF/DOU - ARF - DOURADOS", data_nascimento: "1986-11-19" },
+      { id: 139, nome: "Sonahra D Avila Alves", equipe: "CHAT", cargo: "ATA", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1976-10-10" },
+      { id: 140, nome: "Suely Satie Takase Aguena", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1972-07-10" },
+      { id: 141, nome: "Susana Nara de Souza Pacheco", equipe: "EATRE1", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1973-12-09" },
+      { id: 142, nome: "Talsia Garcia Meira", equipe: "Gabinete/Diate", cargo: "ATRFB", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1973-02-14" },
+      { id: 143, nome: "Telma de Paula Franca", equipe: "APA", cargo: "TSS", unidade: "ARF/CER - ARF - CERES", data_nascimento: "1959-01-28" },
+      { id: 144, nome: "Tiago Gomes de Souza", equipe: "PAV", cargo: "ATRFB", unidade: "ARF/GAS - ARF - GOIAS", data_nascimento: "1980-04-19" },
+      { id: 145, nome: "Tsurumatsu Narlucia Soares", equipe: "APA", cargo: "TSS", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1963-01-23" },
+      { id: 146, nome: "Ubirajara José Ayres Rodrigues", equipe: "APA", cargo: "Agente Administrativo", unidade: "POSTO/DIA - POSTO - DIANÓPOLIS", data_nascimento: "1956-11-23" },
+      { id: 147, nome: "Valeria de Araújo Guimaraes de Marchi", equipe: "APA", cargo: "TSS", unidade: "ARF/BGR - ARF - BARRA DO GARCAS", data_nascimento: "1963-11-01" },
+      { id: 148, nome: "Vanessa de Lima Silva", equipe: "EATRE1", cargo: "Agente Administrativo", unidade: "ARF/FMS - ARF - FORMOSA", data_nascimento: "1986-10-17" },
+      { id: 149, nome: "Valmir de Freitas Pereira", equipe: "PAV", cargo: "ATRFB", unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1977-03-07" },
+      { id: 150, nome: "Victor de Moraes Ramos", equipe: "PAV", cargo: "ATA", unidade: "POSTO/DIA - POSTO - DIANÓPOLIS", data_nascimento: "1985-04-17" },
+      { id: 151, nome: "Vitor Vêncio Marques Pinto", equipe: "APA", cargo: "ATRFB", unidade: "ARF/ROO - ARF - RONDONOPOLIS", data_nascimento: "1995-11-22" },
+      { id: 152, nome: "Wanessa da Silva Dias", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1975-04-04" },
+      { id: 153, nome: "Wayne Rodrigues de Sousa", equipe: "CHAT", cargo: "ATRFB", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1970-12-23" },
+      { id: 154, nome: "Wellington Gomes Cardoso", equipe: "PAV", cargo: "ATA", unidade: "ARF/JAT - ARF - JATAI", data_nascimento: "1970-02-26" },
+      { id: 155, nome: "William Pereira de Amorim Júnior", equipe: "CHAT", cargo: "ATA", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1988-08-22" },
+      { id: 156, nome: "Antonio Henrique Lindemberg Baltazar", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1978-02-25" },
+      { id: 157, nome: "Silvia Mikiko Tanji", equipe: "COLEGA", cargo: null, unidade: "Gabin - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1964-05-14" },
+      { id: 158, nome: "Marco Antonio Sampaio Cancado Filho", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1979-12-10" },
+      { id: 159, nome: "Gilson Pedro do Nascimento", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1961-09-01" },
+      { id: 160, nome: "Ilan Bruno Guimaraes de Souza", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1977-11-08" },
+      { id: 161, nome: "Rodrigo Amaral Antunes", equipe: "COLEGA", cargo: null, unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1982-03-31" },
+      { id: 162, nome: "Vicente de Paulo da Cruz Chagas", equipe: "COLEGA", cargo: null, unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1988-07-30" },
+      { id: 163, nome: "Fabricio Raymundo de Sousa Soares", equipe: "COLEGA", cargo: null, unidade: "DRF/BSB - DRF - BRASILIA", data_nascimento: "1980-10-14" },
+      { id: 164, nome: "Marizete Horner de Almeida", equipe: "COLEGA", cargo: null, unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1980-06-23" },
+      { id: 165, nome: "Erivelto Moyses Torrico Alencar", equipe: "COLEGA", cargo: null, unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1984-03-26" },
+      { id: 166, nome: "Cecília Teixeira Paranhos", equipe: "Gabinete/Diate", cargo: "Estagiaria", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "2001-10-01" },
+      { id: 167, nome: "Luciana Ayumi Lopes Miura", equipe: "Gabinete/Diate", cargo: "Estagiaria", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "2004-11-20" },
+      { id: 167, nome: "Ana Paula Rodrigues Catoira", equipe: "Gabinete/Diate", cargo: "Administrativo", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1979-01-07" },
+    ];
+
+const MESES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+const state = {
+  filtros: { equipe: "", unidade: "", busca: "" },
+  mesCalendario: new Date().getMonth() + 1,
+};
+
+const $ = (sel) => document.querySelector(sel);
+
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function enrich(pessoa) {
+  const nasc = new Date(pessoa.data_nascimento + "T00:00:00");
+  const hoje = startOfDay(new Date());
+
+  const dia = nasc.getDate();
+  const mes = nasc.getMonth() + 1;
+  const mesNome = MESES[nasc.getMonth()];
+
+  let proximo = new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate());
+  if (proximo < hoje) {
+    proximo = new Date(hoje.getFullYear() + 1, nasc.getMonth(), nasc.getDate());
+  }
+
+  const diasRestantes = Math.round((proximo - hoje) / (1000 * 60 * 60 * 24));
+
+  return {
+    ...pessoa,
+    dia,
+    mes,
+    mes_nome: mesNome,
+    proximo_aniversario: proximo.toISOString().slice(0, 10),
+    dias_restantes: diasRestantes,
+    faz_aniversario_hoje: diasRestantes === 0,
+  };
+}
+
+function getAll() {
+  return DADOS_ANIVERSARIANTES.map(enrich);
+}
+
+function formatarDataSimples(iso) {
+  if(!iso) return "—";
+  const [, mes, dia] = iso.split("-");
+  return `${dia}/${mes}`;
+}
+
+function renderHoje() {
+  $("#todayLabel").textContent = new Date().toLocaleDateString("pt-BR");
+}
+
+function renderResumo() {
+  const todos = getAll();
+  const hoje = todos.filter((p) => p.faz_aniversario_hoje);
+  const futuros = todos.filter((p) => !p.faz_aniversario_hoje).sort((a, b) => a.dias_restantes - b.dias_restantes);
+  const proximo = futuros[0] || null;
+  const mesAtual = new Date().getMonth() + 1;
+  const noMes = todos.filter((p) => p.mes === mesAtual).length;
+
+  const heroCard = document.querySelector(".hero");
+
+  if (hoje.length > 0) {
+    heroCard.classList.add("tem-aniversario");
+    $("#heroName").textContent = hoje.map((p) => p.nome).join(", ");
+    $("#heroSub").textContent = hoje.length === 1
+      ? `${hoje[0].equipe || "—"} · Faz aniversário hoje 🎉`
+      : `${hoje.length} pessoas fazem aniversário hoje 🎉`;
+  } else {
+    heroCard.classList.remove("tem-aniversario");
+    $("#heroName").textContent = "Nenhum aniversário hoje";
+    $("#heroSub").textContent = proximo ? `Próximo: ${proximo.nome} em ${proximo.dias_restantes} dia(s)` : "—";
+  }
+
+  if (proximo) {
+    $("#kpiProximo").textContent = `${proximo.dias_restantes} dias`;
+    $("#kpiProximoNome").textContent = proximo.nome;
+  } else {
+    $("#kpiProximo").textContent = "—";
+  }
+
+  $("#kpiMes").textContent = noMes;
+}
+
+function renderProximos() {
+  const lista = getAll()
+    .filter((p) => !p.faz_aniversario_hoje)
+    .sort((a, b) => a.dias_restantes - b.dias_restantes)
+    .slice(0, 6);
+
+  const ul = $("#listaProximos");
+  ul.innerHTML = "";
+  if (lista.length === 0) {
+    ul.innerHTML = "<li>Nenhum próximo aniversário encontrado.</li>";
+    return;
+  }
+  lista.forEach((p) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span class="dot"></span>
+      <span class="nome">${p.nome}</span>
+      <span class="quando">${formatarDataSimples(p.proximo_aniversario)} · ${p.dias_restantes}d</span>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function renderFiltrosOptions() {
+  const todos = getAll();
+  const equipes = [...new Set(todos.map((p) => p.equipe).filter(Boolean))].sort();
+  const unidades = [...new Set(todos.map((p) => p.unidade).filter(Boolean))].sort();
+
+  const selEquipe = $("#fEquipe");
+  const selUnidade = $("#fUnidade");
+  equipes.forEach((eq) => {
+    const opt = document.createElement("option");
+    opt.value = eq; opt.textContent = eq;
+    selEquipe.appendChild(opt);
+  });
+  unidades.forEach((un) => {
+    const opt = document.createElement("option");
+    opt.value = un; opt.textContent = un;
+    selUnidade.appendChild(opt);
+  });
+}
+
+function renderTabela() {
+  let lista = getAll();
+  const { equipe, unidade, busca } = state.filtros;
+
+  if (equipe) lista = lista.filter((p) => p.equipe === equipe);
+  if (unidade) lista = lista.filter((p) => p.unidade === unidade);
+  if (busca) {
+    const q = busca.toLowerCase();
+    lista = lista.filter((p) => p.nome.toLowerCase().includes(q));
+  }
+  lista.sort((a, b) => a.dias_restantes - b.dias_restantes);
+
+  const tbody = document.querySelector("#tabelaCompleta tbody");
+  tbody.innerHTML = "";
+  lista.forEach((p) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${p.nome}${p.faz_aniversario_hoje ? ' <span class="badge-hoje">hoje</span>' : ""}</td>
+      <td>${p.equipe || "—"}</td>
+      <td>${p.cargo || "—"}</td>
+      <td>${formatarDataSimples(p.proximo_aniversario)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  $("#contadorResultados").textContent = `(${lista.length})`;
+}
+
+function renderCalendario() {
+  const todos = getAll().filter((p) => p.mes === state.mesCalendario);
+  const porDia = {};
+  todos.forEach((p) => {
+    porDia[p.dia] = porDia[p.dia] || [];
+    porDia[p.dia].push({ nome: p.nome, equipe: p.equipe });
+  });
+
+  $("#mesLabel").textContent = MESES[state.mesCalendario - 1];
+
+  const grid = $("#calGrid");
+  grid.innerHTML = "";
+
+  const anoRef = new Date().getFullYear();
+  const primeiroDiaSemana = new Date(anoRef, state.mesCalendario - 1, 1).getDay();
+  const totalDias = new Date(anoRef, state.mesCalendario, 0).getDate();
+  const hoje = new Date();
+  const ehMesAtual = (state.mesCalendario - 1) === hoje.getMonth();
+
+  for (let i = 0; i < primeiroDiaSemana; i++) {
+    const filler = document.createElement("div");
+    filler.className = "cal-day empty";
+    grid.appendChild(filler);
+  }
+
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const cell = document.createElement("div");
+    const pessoas = porDia[dia];
+    cell.className = "cal-day" + (pessoas ? " has-birthday" : "") + (ehMesAtual && dia === hoje.getDate() ? " today" : "");
+    cell.innerHTML = `${dia}`;
+    if (pessoas) {
+      cell.innerHTML += `<span class="count">${pessoas.length}</span>`;
+      const namesBox = document.createElement("div");
+      namesBox.className = "names";
+      namesBox.textContent = pessoas.map((p) => p.nome).join(" · ");
+      cell.appendChild(namesBox);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function bindEvents() {
+  $("#fEquipe").addEventListener("change", (e) => { state.filtros.equipe = e.target.value; renderTabela(); });
+  $("#fUnidade").addEventListener("change", (e) => { state.filtros.unidade = e.target.value; renderTabela(); });
+  $("#fBusca").addEventListener("input", (e) => { state.filtros.busca = e.target.value; renderTabela(); });
+  $("#fLimpar").addEventListener("click", () => {
+    state.filtros = { equipe: "", unidade: "", busca: "" };
+    $("#fEquipe").value = ""; $("#fUnidade").value = ""; $("#fBusca").value = "";
+    renderTabela();
+  });
+  $("#mesPrev").addEventListener("click", () => {
+    state.mesCalendario = state.mesCalendario === 1 ? 12 : state.mesCalendario - 1;
+    renderCalendario();
+  });
+  $("#mesNext").addEventListener("click", () => {
+    state.mesCalendario = state.mesCalendario === 12 ? 1 : state.mesCalendario + 1;
+    renderCalendario();
+  });
+}
+
+function safe(fn, label) {
+  try {
+    fn();
+  } catch (err) {
+    console.warn(`Falha ao renderizar "${label}":`, err);
+  }
+}
+
+function init() {
+  safe(renderHoje, "data de hoje");
+  bindEvents();
+  safe(renderResumo, "resumo");
+  safe(renderProximos, "próximos aniversários");
+  safe(renderFiltrosOptions, "opções de filtro");
+  safe(renderTabela, "tabela completa");
+  safe(renderCalendario, "calendário");
+}
+
+init();
+</script>
+</body>
+</html>
