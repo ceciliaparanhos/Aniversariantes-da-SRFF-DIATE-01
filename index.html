@@ -665,15 +665,16 @@ function renderResumo() {
     $("#heroSub").textContent = proximo ? `Próximo: ${proximo.nome} em ${proximo.dias_restantes} dia(s)` : "—";
   }
 
-  if (proximo) {
-    $("#kpiProximo").textoConteúdo = `${Proximo.dias_restantes} dia(s)`;
-    $("#kpiProximoNome").textContent = proximo.nome;
-  } else {
-    $("#kpiProximo").textContent = "—";
-  }
-
-  $("#kpiMes").textContent = noMes;
+  if (Proximo) {
+    $("#kpiProximo").text(`${Proximo.dias_restantes} dia(s)`);
+    $("#kpiProximoNome").text(Proximo.Nome);
+} else {
+    $("#kpiProximo").text("-- dia(s)");
+    $("#kpiProximoNome").text("-");
 }
+
+$("#kpiMes").text(noMes);
+
 
 function renderProximos() {
   const lista = getAll()
