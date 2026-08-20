@@ -340,7 +340,7 @@ footer {
   <!-- KPI: próximo em -->
   <section class="card kpi" style="--bar: var(--teal)">
     <div class="card-label small">Próximo em</div>
-    <p class="kpi-value" id="kpiProximo">-- dia(s)</p>
+    <p class="kpi-value" id="kpiProximo">-- dias</p>
     <p class="kpi-sub" id="kpiProximoNome">&nbsp;</p>
   </section>
 
@@ -581,7 +581,7 @@ const DADOS_ANIVERSARIANTES = [
       { id: 165, nome: "Erivelto Moyses Torrico Alencar", equipe: "COLEGA", cargo: null, unidade: "DRF/CGE - DRF - CAMPO GRANDE", data_nascimento: "1984-03-26" },
       { id: 166, nome: "Cecília Teixeira Paranhos", equipe: "Gabinete/Diate", cargo: "Estagiária", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "2001-10-01" },
       { id: 167, nome: "Luciana Ayumi Lopes Miura", equipe: "Gabinete/Diate", cargo: "Estagiária", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "2004-11-20" },
-      { id: 168, nome: "Ana Paula Rodrigues Catoira", equipe: "Gabinete/Diate", cargo: "Administrativo", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1979-01-07" },
+      { id: 167, nome: "Ana Paula Rodrigues Catoira", equipe: "Gabinete/Diate", cargo: "Administrativo", unidade: "SRRF01 - SRRF - 1ª REGIÃO FISCAL", data_nascimento: "1979-01-07" },
       { id: 169, nome: "Suely Lopes Ribeiro", equipe: "COLEGA", cargo: "Chefe da Sepol/Analista", unidade: "DRF/GOI - DRF - GOIANIA", data_nascimento: "1972-11-12" },
     ];
 
@@ -651,34 +651,29 @@ function renderResumo() {
   const mesAtual = new Date().getMonth() + 1;
   const noMes = todos.filter((p) => p.mes === mesAtual).length;
 
-  const $heroCard = $(".hero");
+  const heroCard = document.querySelector(".hero");
 
-if (hoje.length > 0) {
-    $heroCard.addClass("tem-aniversario");
-    $("#heroName").text(hoje.map(p => p.nome).join(", "));
-    $("#heroSub").text(
-        hoje.length === 1
-            ? `${hoje[0].equipe || "-"} · Faz aniversário hoje 🎉`
-            : `${hoje.length} pessoas fazem aniversário hoje 🎉`
-    );
-} else {
-    $heroCard.removeClass("tem-aniversario");
-    $("#heroName").text("Nenhum aniversário hoje");
-    $("#heroSub").text(
-        proximo ? `Próximo: ${proximo.nome} em ${proximo.dias_restantes} dia(s)` : "-"
-    );
+  if (hoje.length > 0) {
+    heroCard.classList.add("tem-aniversario");
+    $("#heroName").textContent = hoje.map((p) => p.nome).join(", ");
+    $("#heroSub").textContent = hoje.length === 1
+      ? `${hoje[0].equipe || "—"} · Faz aniversário hoje 🎉`
+      : `${hoje.length} pessoas fazem aniversário hoje 🎉`;
+  } else {
+    heroCard.classList.remove("tem-aniversario");
+    $("#heroName").textContent = "Nenhum aniversário hoje";
+    $("#heroSub").textContent = proximo ? `Próximo: ${proximo.nome} em ${proximo.dias_restantes} dia(s)` : "—";
+  }
+
+  if (proximo) {
+    $("#kpiProximo").textContent = `${proximo.dias_restantes} dias`;
+    $("#kpiProximoNome").textContent = proximo.nome;
+  } else {
+    $("#kpiProximo").textContent = "—";
+  }
+
+  $("#kpiMes").textContent = noMes;
 }
-
-if (Proximo) {
-    $("#kpiProximo").text(`${Proximo.dias_restantes} dia(s)`);
-    $("#kpiProximoNome").text(Proximo.Nome);
-} else {
-    $("#kpiProximo").text("-- dia(s)");
-    $("#kpiProximoNome").text("-");
-}
-
-$("#kpiMes").text(noMes);
-
 
 function renderProximos() {
   const lista = getAll()
