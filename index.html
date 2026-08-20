@@ -651,21 +651,25 @@ function renderResumo() {
   const mesAtual = new Date().getMonth() + 1;
   const noMes = todos.filter((p) => p.mes === mesAtual).length;
 
-  const heroCard = document.querySelector(".hero");
+  const $heroCard = $(".hero");
 
-  if (hoje.length > 0) {
-    heroCard.classList.add("tem-aniversario");
-    $("#heroName").textContent = hoje.map((p) => p.nome).join(", ");
-    $("#heroSub").textContent = hoje.length === 1
-      ? `${hoje[0].equipe || "—"} · Faz aniversário hoje 🎉`
-      : `${hoje.length} pessoas fazem aniversário hoje 🎉`;
-  } else {
-    heroCard.classList.remove("tem-aniversario");
-    $("#heroName").textContent = "Nenhum aniversário hoje";
-    $("#heroSub").textContent = proximo ? `Próximo: ${proximo.nome} em ${proximo.dias_restantes} dia(s)` : "—";
-  }
+if (hoje.length > 0) {
+    $heroCard.addClass("tem-aniversario");
+    $("#heroName").text(hoje.map(p => p.nome).join(", "));
+    $("#heroSub").text(
+        hoje.length === 1
+            ? `${hoje[0].equipe || "-"} · Faz aniversário hoje 🎉`
+            : `${hoje.length} pessoas fazem aniversário hoje 🎉`
+    );
+} else {
+    $heroCard.removeClass("tem-aniversario");
+    $("#heroName").text("Nenhum aniversário hoje");
+    $("#heroSub").text(
+        proximo ? `Próximo: ${proximo.nome} em ${proximo.dias_restantes} dia(s)` : "-"
+    );
+}
 
-  if (Proximo) {
+if (Proximo) {
     $("#kpiProximo").text(`${Proximo.dias_restantes} dia(s)`);
     $("#kpiProximoNome").text(Proximo.Nome);
 } else {
